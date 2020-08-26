@@ -27,7 +27,6 @@ class MainWidget(QWidget):
         self.handler = None
         self.joint_names = []
 
-        self._need_redraw = False
         self._update_plot_timer = QTimer(self)
         self._update_plot_timer.timeout.connect(self.update_plot)
 
