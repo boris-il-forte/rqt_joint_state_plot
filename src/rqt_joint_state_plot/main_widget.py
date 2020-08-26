@@ -1,19 +1,16 @@
-#!/usr/bin/env python
-
 from python_qt_binding import loadUi
 from python_qt_binding.QtCore import Qt, QTimer, qWarning, Signal, Slot
 from python_qt_binding.QtGui import QIcon
 from python_qt_binding.QtWidgets import QAction, QMenu, QWidget, QTreeWidgetItem
 import rospy
 import rospkg
-from roslib.message import get_message_class
 from sensor_msgs.msg import JointState
-import numpy as np
 from .plot_widget import PlotWidget
 
 
 class MainWidget(QWidget):
     draw_curves = Signal(object, object)
+    _redraw_interval = 40
 
     def __init__(self):
         super(MainWidget, self).__init__()
@@ -29,8 +26,11 @@ class MainWidget(QWidget):
 
         self.handler = None
         self.joint_names = []
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update)
+
+        self._need_redraw = False
+        self._update_plot_timer = QTimer(self)
+        self._update_plot_timer.timeout.connect(self.update_plot)
+
         self.plot_widget = PlotWidget(self)
         self.plot_layout.addWidget(self.plot_widget)
         self.draw_curves.connect(self.plot_widget.draw_curves)
@@ -126,9 +126,7 @@ class MainWidget(QWidget):
             else:
                 self.eff[joint_name].append(0.0)
 
-        self.plot_graph()
-
-    def plot_graph(self):
+    def update_plot(self):
         '''
         Emit changed signal to call plot_widet.draw_curves()
         '''
@@ -151,10 +149,16 @@ class MainWidget(QWidget):
 
     def update_checkbox(self, item, column):
         self.recursive_check(item)
-        self.plot_graph()
+        self.enable_timer()
 
     def recursive_check(self, item):
         check_state = item.checkState(0)
         for i in range(item.childCount()):
             item.child(i).setCheckState(0, check_state)
             self.recursive_check(item.child(i))
+
+    def enable_timer(self, enabled=True):
+        if enabled:
+            self._update_plot_timer.start(self._redraw_interval)
+        else:
+            self._update_plot_timer.stop()

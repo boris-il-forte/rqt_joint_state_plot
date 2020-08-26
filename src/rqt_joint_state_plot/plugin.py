@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from rqt_gui_py.plugin import Plugin
 from .main_widget import MainWidget
 
@@ -7,7 +6,7 @@ class JointStatePlot(Plugin):
     def __init__(self, context):
         super(JointStatePlot, self).__init__(context)
         self.context = context
-        self.setObjectName('JointTrajctoryPlot')
+        self.setObjectName('JointStatePlot')
         # Create a MainWidget
         self.main_widget = MainWidget()
         context.add_widget(self.main_widget)

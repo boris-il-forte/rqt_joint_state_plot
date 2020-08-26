@@ -1,16 +1,8 @@
-#!/usr/bin/env python
-from python_qt_binding.QtCore import Slot, Qt, QTimer, qWarning, Signal
-from python_qt_binding.QtGui import QColor
 from python_qt_binding.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
 from python_qt_binding import QT_BINDING_VERSION
 from distutils.version import LooseVersion
 from matplotlib.figure import Figure
-import operator
-import numpy as np
-import copy
-import threading
-import rospy
-from trajectory_msgs.msg import JointTrajectory
+
 if LooseVersion(QT_BINDING_VERSION) >= LooseVersion('5.0.0'):
     from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 else:
