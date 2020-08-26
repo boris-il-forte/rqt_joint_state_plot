@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(rqt_joint_trajectory_plot)
+project(rqt_joint_state_plot)
 find_package(catkin REQUIRED)
 catkin_package()
 catkin_python_setup()
@@ -17,7 +17,7 @@ install(
 )
 
 install(
-  PROGRAMS script/joint_trajectory_generator.py script/rqt_joint_trajectory_plot
+  PROGRAMS script/rqt_joint_state_plot
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -31,7 +31,7 @@ install(
 if(CATKIN_ENABLE_TESTING)
   find_package(roslint REQUIRED)
   set(ROSLINT_PYTHON_OPTS "--max-line-length=180")
-  roslint_python(src/rqt_joint_trajectory_plot/plot_widget.py)
+  roslint_python(src/rqt_joint_state_plot/plot_widget.py)
   add_dependencies(tests roslint)
 
   find_package(roslaunch REQUIRED)

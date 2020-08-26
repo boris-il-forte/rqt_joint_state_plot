@@ -1,14 +1,15 @@
 <?xml version="1.0"?>
 <package>
-  <name>rqt_joint_trajectory_plot</name>
+  <name>rqt_joint_state_plot</name>
 
   <version>0.0.5</version>
 
-  <description>The rqt_joint_trajectory_plot package</description>
+  <description>The rqt_joint_state_plot package</description>
 
-  <maintainer email="dev@opensource-robotics.tokyo.jp">Tokyo Opensource Robotics Kyokai (TORK) Developer Team</maintainer>
+  <maintainer email="davide@robot-learning.de">Davide Tateo</maintainer>
 
   <author email="ryosuke.tajima@gmail.com">Ryosuke Tajima</author>
+  <author email="davide@robot-learning.de">Davide Tateo</author>
 
   <license>MIT</license>
   <!-- <url type="website">http://wiki.ros.org/rqt_joint_trajectory_plot</url> -->
