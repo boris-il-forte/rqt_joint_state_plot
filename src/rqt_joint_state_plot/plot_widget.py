@@ -36,14 +36,15 @@ class PlotWidget(QWidget):
         vbox.addWidget(self.canvas)
         self.setLayout(vbox)
 
-    def draw_curves(self, curve_names, time, data):
+    def draw_curves(self, curve_names, data):
         self.canvas.axes.clear()
         self.canvas.axes.grid(True, color='gray')
 
-        plotted_time = time[-100:]
         for name in curve_names:
-            plotted_data = data[name][-100:]
-            self.canvas.axes.plot(plotted_time, plotted_data, '-', label=name)[0]
+            t, v = data[name]
+            plotted_time = t[-100:]
+            plotted_value = v[-100:]
+            self.canvas.axes.plot(plotted_time, plotted_value, '-', label=name)[0]
         self.update_legend()
         self.canvas.draw()
 

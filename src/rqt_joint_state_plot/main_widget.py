@@ -13,7 +13,7 @@ from .plot_widget import PlotWidget
 
 
 class MainWidget(QWidget):
-    draw_curves = Signal(object, object, object)
+    draw_curves = Signal(object, object)
 
     def __init__(self):
         super(MainWidget, self).__init__()
@@ -36,7 +36,7 @@ class MainWidget(QWidget):
         self.draw_curves.connect(self.plot_widget.draw_curves)
 
         self._start_time = rospy.get_time()
-        self.time = []
+        self.time = {}
         (self.pos, self.vel, self.eff) = ({}, {}, {})
 
         # refresh topics list in the combobox
@@ -77,7 +77,6 @@ class MainWidget(QWidget):
         self.select_tree.itemChanged.disconnect()
         self.select_tree.clear()
         for joint_name in self.joint_names:
-            print('considering joint: ', joint_name)
             item = QTreeWidgetItem(self.select_tree)
             item.setText(0, joint_name)
             item.setCheckState(0, Qt.Unchecked)
@@ -87,20 +86,21 @@ class MainWidget(QWidget):
                 sub_item.setText(0, measure_name)
                 sub_item.setCheckState(0, Qt.Unchecked)
                 sub_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        self.select_tree.itemChanged.connect(self.update_checkbox)
+        if self.joint_names:
+            self.select_tree.itemChanged.connect(self.update_checkbox)
 
     def callback(self, msg):
         if self.pause_button.isChecked():
             return
 
-        dt = msg.header.stamp.to_sec() - self._start_time
-        self.time.append(dt)
-
-        if self.joint_names != sorted(msg.name):
-            self.joint_names = sorted(list(set(self.joint_names) | set(msg.name)))
+        new_joints_set = sorted(list(set(self.joint_names) | set(msg.name)))
+        if self.joint_names != new_joints_set:
+            self.joint_names = new_joints_set
             self.refresh_tree()
 
             for joint_name in msg.name:
+                if joint_name not in self.time:
+                    self.time[joint_name] = []
                 if joint_name not in self.pos:
                     self.pos[joint_name] = []
                 if joint_name not in self.vel:
@@ -108,7 +108,11 @@ class MainWidget(QWidget):
                 if joint_name not in self.eff:
                     self.eff[joint_name] = []
 
+        dt = msg.header.stamp.to_sec() - self._start_time
+
         for i, joint_name in enumerate(msg.name):
+            self.time[joint_name].append(dt)
+
             if msg.position:
                 self.pos[joint_name].append(msg.position[i])
             else:
@@ -141,9 +145,9 @@ class MainWidget(QWidget):
                     joint_name = joint_item.text(0)
                     curve_name = joint_name + ' ' + measure_names[n]
                     curve_names.append(curve_name)
-                    data[curve_name] = data_list[n][joint_name]
+                    data[curve_name] = (self.time[joint_name], data_list[n][joint_name])
 
-        self.draw_curves.emit(curve_names, self.time, data)
+        self.draw_curves.emit(curve_names, data)
 
     def update_checkbox(self, item, column):
         self.recursive_check(item)
