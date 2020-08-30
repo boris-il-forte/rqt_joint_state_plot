@@ -1,9 +1,11 @@
+import rospy
+import rospkg
+
 from python_qt_binding import loadUi
 from python_qt_binding.QtCore import Qt, QTimer, qWarning, Signal, Slot
 from python_qt_binding.QtGui import QIcon
 from python_qt_binding.QtWidgets import QAction, QMenu, QWidget, QTreeWidgetItem
-import rospy
-import rospkg
+
 from sensor_msgs.msg import JointState
 from .plot_widget import PlotWidget
 
@@ -47,16 +49,16 @@ class MainWidget(QWidget):
         self.select_tree.itemChanged.connect(self.update_checkbox)
 
     def refresh_topics(self):
-        '''
-        Refresh topic list in the combobox
-        '''
+        self.enable_timer(False)
         topic_list = rospy.get_published_topics()
         if topic_list is None:
             return
         self.topic_combox.clear()
+        self.plot_widget.clear_plot()
         for (name, type) in topic_list:
             if type == 'sensor_msgs/JointState':
                 self.topic_combox.addItem(name)
+        self.enable_timer()
 
     def change_topic(self):
         topic_name = self.topic_combox.currentText()
@@ -90,7 +92,10 @@ class MainWidget(QWidget):
 
     def callback(self, msg):
         if self.pause_button.isChecked():
+            self.plot_widget.set_autoscroll(False)
             return
+        else:
+            self.plot_widget.set_autoscroll(True)
 
         new_joints_set = sorted(list(set(self.joint_names) | set(msg.name)))
         if self.joint_names != new_joints_set:
@@ -126,14 +131,11 @@ class MainWidget(QWidget):
                 self.eff[joint_name].append(0.0)
 
     def update_plot(self):
-        '''
-        Emit changed signal to call plot_widet.draw_curves()
-        '''
         curve_names = []
         data = {}
         data_list = [self.pos, self.vel, self.eff]
         measure_names = ['position', 'velocity', 'effort']
-        # Create curve name and data from checked items
+
         for i in range(self.select_tree.topLevelItemCount()):
             joint_item = self.select_tree.topLevelItem(i)
             for n in range(len(measure_names)):
@@ -147,6 +149,7 @@ class MainWidget(QWidget):
         self.draw_curves.emit(curve_names, data)
 
     def update_checkbox(self, item, column):
+        self.enable_timer(False)
         self.recursive_check(item)
         self.enable_timer()
 

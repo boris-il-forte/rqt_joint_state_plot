@@ -1,45 +1,53 @@
 from python_qt_binding.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
-from python_qt_binding import QT_BINDING_VERSION
-from distutils.version import LooseVersion
-from matplotlib.figure import Figure
-
-if LooseVersion(QT_BINDING_VERSION) >= LooseVersion('5.0.0'):
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-else:
-    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-
-
-class PlotCanvas(FigureCanvas):
-    def __init__(self):
-        super(PlotCanvas, self).__init__(Figure())
-        self.axes = self.figure.add_subplot(111)
-        self.axes.grid(True, color='gray')
-        self.figure.tight_layout()
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.updateGeometry()
+from rqt_plot.data_plot import DataPlot
 
 
 class PlotWidget(QWidget):
     def __init__(self, parent=None):
         super(PlotWidget, self).__init__(parent)
         # create widgets
-        self.canvas = PlotCanvas()
+        self._data_plot = DataPlot(self)
+
+        # disable autoscaling of X, and set a sane default range
+        self._data_plot.set_autoscale(x=False)
+        self._data_plot.set_autoscale(y=DataPlot.SCALE_EXTEND | DataPlot.SCALE_VISIBLE)
+        self._data_plot.autoscroll(True)
+        self._data_plot.set_xlim([0, 10.0])
+
         vbox = QVBoxLayout()
-        vbox.addWidget(self.canvas)
+        vbox.addWidget(self._data_plot)
         self.setLayout(vbox)
 
+        # Set of current topics
+        self._current_curves = set()
+
+    def set_autoscroll(self, autoscroll):
+        self._data_plot.autoscroll(autoscroll)
+
     def draw_curves(self, curve_names, data):
-        self.canvas.axes.clear()
-        self.canvas.axes.grid(True, color='gray')
+        current_curves = self._current_curves.copy()
+        for name in current_curves:
+            if name not in curve_names:
+                self._data_plot.remove_curve(name)
+                self._current_curves.remove(name)
 
         for name in curve_names:
             t, v = data[name]
-            plotted_time = t[-100:]
-            plotted_value = v[-100:]
-            self.canvas.axes.plot(plotted_time, plotted_value, '-', label=name)[0]
-        self.update_legend()
-        self.canvas.draw()
+            if name in self._current_curves:
+                self._data_plot.update_values(name, t, v)
+            else:
+                self._data_plot.add_curve(name, name, t, v)
+                self._current_curves.add(name)
+        self._data_plot.redraw()
 
-    def update_legend(self):
-        handles, labels = self.canvas.axes.get_legend_handles_labels()
-        self.canvas.axes.legend(handles, labels, loc='upper left')
+    def remove_topic(self, name):
+        self._current_curves.remove(name)
+        self._data_plot.remove_curve(name)
+
+    def clear_plot(self):
+        for name in self._current_curves:
+            self._data_plot.clear_values(name)
+            self._data_plot.remove_curve(name)
+
+        self._current_curves.clear()
+        self._data_plot.redraw()

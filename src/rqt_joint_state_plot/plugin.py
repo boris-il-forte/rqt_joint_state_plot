@@ -1,4 +1,5 @@
-from rqt_gui_py.plugin import Plugin
+from qt_gui.plugin import Plugin
+
 from .main_widget import MainWidget
 
 

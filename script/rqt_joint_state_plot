@@ -2,6 +2,7 @@
 
 import sys
 
+from rqt_joint_state_plot.plugin import JointStatePlot
 from rqt_gui.main import Main
 
 main = Main()
