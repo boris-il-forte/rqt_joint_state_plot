@@ -1,6 +1,8 @@
 import rospy
 import rospkg
 
+import threading
+
 from python_qt_binding import loadUi
 from python_qt_binding.QtCore import Qt, QTimer, qWarning, Signal, Slot
 from python_qt_binding.QtGui import QIcon
@@ -31,6 +33,7 @@ class MainWidget(QWidget):
 
         self._update_plot_timer = QTimer(self)
         self._update_plot_timer.timeout.connect(self.update_plot)
+        self._lock = threading.Lock()
 
         self.plot_widget = PlotWidget(self)
         self.plot_layout.addWidget(self.plot_widget)
@@ -50,6 +53,11 @@ class MainWidget(QWidget):
 
     def refresh_topics(self):
         self.enable_timer(False)
+        self._lock.acquire()
+
+        self.time = {}
+        (self.pos, self.vel, self.eff) = ({}, {}, {})
+
         topic_list = rospy.get_published_topics()
         if topic_list is None:
             return
@@ -58,6 +66,8 @@ class MainWidget(QWidget):
         for (name, type) in topic_list:
             if type == 'sensor_msgs/JointState':
                 self.topic_combox.addItem(name)
+
+        self._lock.release()
         self.enable_timer()
 
     def change_topic(self):
@@ -97,6 +107,8 @@ class MainWidget(QWidget):
         else:
             self.plot_widget.set_autoscroll(True)
 
+        self._lock.acquire()
+
         new_joints_set = sorted(list(set(self.joint_names) | set(msg.name)))
         if self.joint_names != new_joints_set:
             self.joint_names = new_joints_set
@@ -130,6 +142,8 @@ class MainWidget(QWidget):
             else:
                 self.eff[joint_name].append(0.0)
 
+        self._lock.release()
+
     def update_plot(self):
         curve_names = []
         data = {}
@@ -138,13 +152,19 @@ class MainWidget(QWidget):
 
         for i in range(self.select_tree.topLevelItemCount()):
             joint_item = self.select_tree.topLevelItem(i)
+
+            self._lock.acquire()
+            joint_name = joint_item.text(0)
             for n in range(len(measure_names)):
                 item = joint_item.child(n)
                 if item.checkState(0):
-                    joint_name = joint_item.text(0)
                     curve_name = joint_name + ' ' + measure_names[n]
                     curve_names.append(curve_name)
-                    data[curve_name] = (self.time[joint_name], data_list[n][joint_name])
+                    new_data = data_list[n][joint_name]
+                    data[curve_name] = (self.time[joint_name][-len(new_data):], new_data)
+
+                    data_list[n][joint_name] = []
+            self._lock.release()
 
         self.draw_curves.emit(curve_names, data)
 

@@ -9,10 +9,10 @@
         <icon type="theme">folder</icon>
         <statustip>Plugins related to visualization.</statustip>
       </group>
-      <label>JointTrajectoryPlot</label>
+      <label>Joint State Plot</label>
       <icon type="theme">utilities-system-monitor</icon>
       <statustip>
-      A plugin visualizing the JointTrajectory message in 2D plot.
+      A plugin visualizing the Joint State message in 2D plot.
       </statustip>
     </qtgui>
   </class>
